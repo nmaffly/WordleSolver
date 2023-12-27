@@ -1,8 +1,15 @@
 from score import common_words, all_words, calc_score, answers
 from solve import filter_words, generate_elim_guesses1
+import numpy as np
+import pandas as pd
 
-
-def evaluate_algorithm(positional_weight, overall_weight, elim_threshold):
+#tests algorithm on all possible wordle answers with customizable features of the algorithm
+#param: positional_weight = the weight given to each letter of a word based on its frequency in that position
+#param: overall_weight = the weight given to each letter of a word based on its overall frequency
+#param: elim_threshold = the number of possible words left before the elimination guesses are no longer used
+#return: avg_guesses = the average number of guesses it took the algorithm to solve a given wordle, excluding wordles that take over 6 guesses
+#return: unsolved = dictionary with keys of words that took over 6 guesses and values of the number of guesses that word took
+def test_algorithm(positional_weight, overall_weight, elim_threshold):
     scored_words = {}
     for word in all_words:
         scored_words[word] = calc_score(word, positional_weight, overall_weight)
@@ -25,6 +32,7 @@ def evaluate_algorithm(positional_weight, overall_weight, elim_threshold):
 
     return avg_num_guesses, unsolved
 
+#prints the stats of the algorithm after going through all possible wordle answers
 def print_stats(avg_guesses, positional_weight, overall_weight, unsolved_words, elim_threshold):
     print()
     print("Algorithm: ")
@@ -39,6 +47,10 @@ def print_stats(avg_guesses, positional_weight, overall_weight, unsolved_words, 
     print(f"Your algorithm was able to solve {100 - percent_unsolved}% of wordles")
     print(f"Your algorithm was unable to solve {percent_unsolved}% of wordles")
 
+#auto solves a wordle with a given answewr and returns the number of guesses it took the algorithm 
+#param: answer, the answer to the wordle
+#param: scored_words, a dictionary of five letter words scored and sorted based on positional and overall letter frequency
+#param: elim_threshold, the number of possible words left before the elimination guesses are no longer used
 def run_wordle(answer, scored_words, elim_threshold):
     num_guesses = 0
     color_code = 'xxxxx'
@@ -50,28 +62,28 @@ def run_wordle(answer, scored_words, elim_threshold):
     current_guess = list(word_dict)[0]
 
     while(color_code != 'ggggg'):
-        for char in current_guess:
-            if char not in used_letters:
-                used_letters.append(char)
-
         color_code = compare_answer(current_guess, answer)
-        for i, char in enumerate(color_code):
-            if char != 'x' and current_guess[i] not in correct_letters:
-                correct_letters.append(current_guess[i])
 
         num_guesses += 1
 
         word_dict = filter_words(current_guess, color_code, word_dict)
 
         if len(word_dict) > elim_threshold: 
+            for char in current_guess:
+                if char not in used_letters:
+                    used_letters.append(char)
+
+            for i, char in enumerate(color_code):
+                if char != 'x' and current_guess[i] not in correct_letters:
+                    correct_letters.append(current_guess[i])
             elim_dict = generate_elim_guesses1(used_letters, correct_letters)
             current_guess = list(elim_dict)[0]
         else:
             current_guess = list(word_dict)[0]
         
-    
     return num_guesses
 
+#compares a guess to an answer and returns the corresponding color code
 def compare_answer(guess, answer):
     color_code = [None] * 5
     temp_answer = list(answer)
@@ -91,6 +103,58 @@ def compare_answer(guess, answer):
 
     return ''.join(color_code)
 
+#finds average guesses of different elimination thresholds with set scoring weights
+def optimize_elim_threshold(positional_weight, overall_weight):
+    elim_threshold_evaluation = []
+
+    print("Elimination threshold: avg number of guesses to solve")
+    for elim_threshold in range(325, 376):
+        avg_guesses, _ = test_algorithm(positional_weight, overall_weight, elim_threshold)
+        elim_threshold_evaluation[elim_threshold] = avg_guesses
+        print(f"{elim_threshold}: {avg_guesses}")
+    
+    most_efficient = min(elim_threshold_evaluation, key=lambda k: elim_threshold_evaluation[k])
+    print()
+    print(f"The most efficient elimination threshold was {most_efficient} with an average number of guesses of {elim_threshold_evaluation[most_efficient]}")
+
+#finds average guesses of different scoring weights with a set elimination threshold
+def optimize_weights(elim_threshold):
+    scoring_weight_evaluation = [] #to be list of dictionaries that will be converted to data frame
+
+    for number in np.arange(0, 2.1, 0.1):
+        current_row = {}
+        positional_weight = round(number, 1)
+        overall_weight = 1
+        avg_guesses,_ = test_algorithm(positional_weight, overall_weight, elim_threshold)
+
+        current_row['overall_weight'] = overall_weight
+        current_row['positional_weight'] = positional_weight
+        current_row['avg_guesses'] = avg_guesses
+
+        scoring_weight_evaluation.append(current_row)
+        
+    df = pd.DataFrame(scoring_weight_evaluation)
+    return df
+
+def evaluate_algorithm():
+    evaluation = [] #dictionary where key value pair is positional weight and corresponding avg guesses
+    for elim_threshold in [100, 150, 200, 250, 300, 350, 400]:  
+        for number in np.arange(0, 2.1, 0.1):
+            current_row = {}
+            positional_weight = round(number, 1)
+            overall_weight = 1
+            avg_guesses,_ = test_algorithm(positional_weight, overall_weight, elim_threshold)
+
+            current_row['elim_threshold'] = elim_threshold
+            current_row['overall_weight'] = overall_weight
+            current_row['positional_weight'] = positional_weight
+            current_row['avg_guesses'] = avg_guesses
+            print("|", end="", flush=True)
+            evaluation.append(current_row)
+        
+    df = pd.DataFrame(evaluation)
+    return df   
+
 def main():
     '''
     #Test cases for compare_answer()
@@ -99,26 +163,19 @@ def main():
     print(compare_answer('paled', 'bagel'))
     print(compare_answer('elect', 'elect'))
     '''
-    positional_weight = 0.2
-    overall_weight = 2
-    
-    elim_threshold_evaluation = {}
 
     
-    print("Elimination threshold: avg number of guesses to solve")
-    for elim_threshold in range(325, 376):
-        avg_guesses, _ = evaluate_algorithm(positional_weight, overall_weight, elim_threshold)
-        elim_threshold_evaluation[elim_threshold] = avg_guesses
-        print(f"{elim_threshold}: {avg_guesses}")
-    
-    most_efficient = min(elim_threshold_evaluation, key=lambda k: elim_threshold_evaluation[k])
-    print()
-    print(f"The most efficient elimination threshold was {most_efficient} with an average number of guesses of {elim_threshold_evaluation[most_efficient]}")
-    
-    
+    evaluation_df = evaluate_algorithm()
 
-    #for word, guesses in unsolved_words.items():
-        #print(f"{word}: {guesses}")
+    pd.set_option('display.max_rows', None)
+    print(evaluation_df)
+
+    max_index = evaluation_df['avg_guesses'].idxmax()
+    max_row = evaluation_df.loc[max_index]
+    print("\nAlgorithm with highest average guesses:")
+    print(max_row)
+    evaluation_df.to_csv('algorithms.csv', index=False)
+    
     
 
 if __name__ == "__main__":

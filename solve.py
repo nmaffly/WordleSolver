@@ -52,12 +52,25 @@ def filter_words(guess, color_code, word_dict):
     for word in words_to_remove:
         del word_dict[word]
 
-    if len(word_dict) < 45:
-        word_dict = sort_common_words_first(word_dict)
+    if len(word_dict) < 36:
+        word_dict = narrow_common_sort(word_dict)
+    elif len(word_dict) < 215:
+        word_dict = broad_common_sort(word_dict)
 
     return word_dict
 
-def sort_common_words_first(word_dict):
+def broad_common_sort(word_dict):
+    """
+    Sorts the dictionary keys so that keys in common_words are at the front, but maintain their scored order
+
+    :param word_dict: Dictionary of words (keys) and their associated values.
+    :param common_words: List of common words to prioritize.
+    :return: Sorted dictionary (word, value)
+    """
+    sorted_items = sorted(word_dict.items(), key=lambda item: item[0] not in common_words)
+    return dict(sorted_items)
+
+def narrow_common_sort(word_dict):
     """
     Sorts the dictionary keys based on their order in common_words. 
     Words not in common_words are moved to the end.
