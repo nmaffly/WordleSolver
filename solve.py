@@ -1,4 +1,4 @@
-from score import scored_words
+from score import scored_words, common_words
 
 #alphabet as a global variable
 all_letters = [chr(ord('a') + i) for i in range(26)] 
@@ -51,6 +51,33 @@ def filter_words(guess, color_code, word_dict):
     # Remove the words outside the loop
     for word in words_to_remove:
         del word_dict[word]
+
+    if len(word_dict) < 45:
+        word_dict = sort_common_words_first(word_dict)
+
+    return word_dict
+
+def sort_common_words_first(word_dict):
+    """
+    Sorts the dictionary keys based on their order in common_words. 
+    Words not in common_words are moved to the end.
+
+    :param word_dict: Dictionary of words (keys) and their associated values.
+    :return: Sorted dictionary
+    """
+    # Create a set for faster membership tests
+    common_words_set = set(common_words)
+
+    def sort_key(word):
+        try:
+            # Position in common_words if the word is in common_words
+            return common_words.index(word)
+        except ValueError:
+            # A large number to move the word to the end if it's not in common_words
+            return float('inf')
+
+    sorted_items = sorted(word_dict.items(), key=lambda item: (sort_key(item[0]), item[0] not in common_words_set))
+    return dict(sorted_items)
 
 #generates a list of elimination words based on unused letters
 def generate_elim_guesses1(used_letters, correct_letters):
@@ -149,7 +176,7 @@ def solve():
         elif char == 'x' and guess[i] in unused_letters:
             unused_letters.remove(guess[i])
     
-    filter_words(guess, color_code, word_dict)
+    word_dict = filter_words(guess, color_code, word_dict)
 
     while(color_code != 'ggggg'):
         print(f"Possible words left: {len(word_dict)}")  
@@ -178,7 +205,7 @@ def solve():
             if char != 'x' and guess[i] not in correct_letters:
                 correct_letters.append(guess[i])
         
-        filter_words(guess, color_code, word_dict)
+        word_dict = filter_words(guess, color_code, word_dict)
     
     print("Congrats on solving the wordle!")
 

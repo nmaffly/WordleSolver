@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Solver</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Wordle Solver</h1>
+
+    <p>
+        Enter your guess and the corresponding color code below. Type 'x' for grey, 'y' for yellow', and 'g' for green. For example, 'xxgyx'.
+    </p>
+    <p>There are {{ remaining_words }} possible answers left.</p>
+    <p>Here are some recommended guesses: {{ possible_answers }}</p>
+    {% if elim_words %}
+        <p>Here are some elimination words: {{ elim_words }}</p>
+    {% endif %}
+    {% for guess in guess_record %}
+        <p>{{ guess }}</p>
+    {% endfor %}
+
+    <form action="/" method="post">
+        <label for="guess">Your Guess:</label>
+        <input type="text" id="guess" name="word" maxlength="5" pattern="[A-Za-z]{5}" title="Enter your guess" required>
+        <br>
+
+        <label for="color_code">Color Code:</label>
+        <input type="text" id="color_code" name="colors" maxlength="5" pattern="[XGYxgy]{5}" title="Color Code" required>
+        <br>
+        <button type="submit">Generate words</button>
+    </form>
+    <br>
+    <form action="/reset" method="post">
+        <button type="submit">Reset</button>
+    </form>
+</body>
+</html>

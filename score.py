@@ -10,8 +10,8 @@ def load_frequencies_from_file(file_path):
         return json.load(json_file)
     
 #calculates the score for a word based on each letter frequency
-def calc_score(word):
-    global pos_frequencies
+def calc_score(word, positional_weight, overall_weight):
+    global positional_frequencies
     global overall_frequencies
 
     score = 0
@@ -25,9 +25,9 @@ def calc_score(word):
         seen_letters.add(letter)
 
         if letter in positional_frequencies[index]:
-            score += positional_frequencies[index][letter] #* 5
+            score += positional_frequencies[index][letter] * positional_weight
         
-        score += overall_frequencies[letter]    
+        score += overall_frequencies[letter] * overall_weight
     
     return score
 
@@ -35,11 +35,13 @@ positional_frequencies = load_frequencies_from_file(positional_frequencies_file)
 overall_frequencies = load_frequencies_from_file(overall_frequencies_file)
 
 all_words = read_file('words/allowed_words.txt')
+common_words = read_file('words/common_five_letter_words1.txt')
+answers = read_file('words/official_answers.txt')
 
 scored_words = {}
 
 for word in all_words:
-    scored_words[word] = calc_score(word)
+    scored_words[word] = calc_score(word, 0.2, 1)
     
 scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
 
