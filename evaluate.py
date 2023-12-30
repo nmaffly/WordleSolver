@@ -1,5 +1,5 @@
 from score import common_words, all_words, calc_score, answers
-from solve import filter_words, generate_elim_guesses1
+from solve import filter_words, generate_elim_guesses2, words_with_unused_letters, count_common_words
 import numpy as np
 import pandas as pd
 
@@ -15,20 +15,22 @@ def test_algorithm(positional_weight, overall_weight, elim_threshold):
         scored_words[word] = calc_score(word, positional_weight, overall_weight)
 
     scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
-
     total_guesses = 0
     unsolved = {}
     for i, word in enumerate(answers):
-        #print(f"{round(100 * i/len(common_words))}%: {word}")
+        #print(f"{round(100 * i/len(answers))}%: {word}")
         num_guesses = run_wordle(word, scored_words, elim_threshold)
         if num_guesses > 6:
             unsolved[word] = num_guesses
+            total_guesses += num_guesses
         else:
             total_guesses += num_guesses
+        
 
-    avg_num_guesses = total_guesses / len(answers)
 
-    #print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
+    avg_num_guesses = total_guesses / (len(answers))
+
+    print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
 
     return avg_num_guesses, unsolved
 
@@ -68,16 +70,22 @@ def run_wordle(answer, scored_words, elim_threshold):
 
         word_dict = filter_words(current_guess, color_code, word_dict)
 
-        if len(word_dict) > elim_threshold: 
+        for i, char in enumerate(color_code):
+                if char != 'x' and current_guess[i] not in correct_letters:
+                    correct_letters.append(current_guess[i])
+
+        if num_guesses < 2 or len(word_dict) > elim_threshold: 
             for char in current_guess:
                 if char not in used_letters:
                     used_letters.append(char)
-
-            for i, char in enumerate(color_code):
-                if char != 'x' and current_guess[i] not in correct_letters:
-                    correct_letters.append(current_guess[i])
-            elim_dict = generate_elim_guesses1(used_letters, correct_letters)
+            elim_dict = words_with_unused_letters(used_letters)
             current_guess = list(elim_dict)[0]
+        elif color_code.count('g') >= 3 and num_guesses < 5:
+            common_words_left = count_common_words(list(word_dict))
+            if len(common_words_left) > 3:
+                current_guess = (generate_elim_guesses2(common_words_left, color_code, correct_letters))[0]
+            else:
+                current_guess = list(word_dict)[0]
         else:
             current_guess = list(word_dict)[0]
         
@@ -156,15 +164,15 @@ def evaluate_algorithm():
     return df   
 
 def main():
-    '''
-    #Test cases for compare_answer()
-    print(compare_answer('soare', 'bagel'))
-    print(compare_answer('linty', 'bagel'))
-    print(compare_answer('paled', 'bagel'))
-    print(compare_answer('elect', 'elect'))
-    '''
-
     
+    #Test cases for compare_answer()
+    print(compare_answer('mired', 'wider'))
+    #print(compare_answer('linty', 'bagel'))
+    #print(compare_answer('paled', 'bagel'))
+    #print(compare_answer('elect', 'elect'))
+    
+
+    '''
     evaluation_df = evaluate_algorithm()
 
     pd.set_option('display.max_rows', None)
@@ -175,8 +183,25 @@ def main():
     print("\nAlgorithm with highest average guesses:")
     print(max_row)
     evaluation_df.to_csv('algorithms.csv', index=False)
-    
-    
+    '''
+
+
+    scored_words = {}
+    for word in all_words:
+        scored_words[word] = calc_score(word, 0.2, 1)
+
+    scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
+
+    #run_wordle('baker', scored_words, elim_threshold=350)
+
+    unsolved_words = {}
+
+    #avg_guesses, unsolved_words = test_algorithm(0.2, 1, 350)
+
+    for word, num_guesses in unsolved_words.items():
+        #print(f"{word}: {num_guesses}")
+        pass
+
 
 if __name__ == "__main__":
     main()

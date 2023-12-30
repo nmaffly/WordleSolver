@@ -1,4 +1,4 @@
-from score import scored_words, common_words
+from score import scored_words, common_words, all_words, overall_frequencies
 
 #alphabet as a global variable
 all_letters = [chr(ord('a') + i) for i in range(26)] 
@@ -67,7 +67,7 @@ def broad_common_sort(word_dict):
     :param common_words: List of common words to prioritize.
     :return: Sorted dictionary (word, value)
     """
-    sorted_items = sorted(word_dict.items(), key=lambda item: item[0] not in common_words)
+    sorted_items = sorted(word_dict.items(), key=lambda item: (item[0] not in common_words, item[0].endswith('s')))
     return dict(sorted_items)
 
 def narrow_common_sort(word_dict):
@@ -92,59 +92,62 @@ def narrow_common_sort(word_dict):
     sorted_items = sorted(word_dict.items(), key=lambda item: (sort_key(item[0]), item[0] not in common_words_set))
     return dict(sorted_items)
 
-#generates a list of elimination words based on unused letters
-def generate_elim_guesses1(used_letters, correct_letters):
+def words_with_unused_letters(used_letters):
     copy_dict = scored_words.copy()
     filtered_dict = {}
     letters = used_letters[:]
-    add_index = 0
-    if correct_letters:
-        max_iterations = len(correct_letters)
-    else:
-        max_iterations = 1
-            
-
-    while not filtered_dict and add_index < max_iterations:
-        for word, value in copy_dict.items():
-            add = True
-            for letter in letters:
-                if letter in word:
-                    add = False
-                    break
+    
+    for word,value in copy_dict.items():
+        add = True
+        for letter in letters:
+            if letter in word:
+                add = False
+                break
+    
+        if add:
+            filtered_dict[word] = value
         
-            if add:
-                filtered_dict[word] = value
-        if correct_letters:
-            letters.remove(correct_letters[add_index])
-        add_index += 1
-
     return filtered_dict
+
+def count_common_words(word_list):
+    remaining_words_set = set(word_list)
+    common_words_set = set(common_words)
+
+    remaining_common_words = remaining_words_set.intersection(common_words_set)
+
+    return list(remaining_common_words)
 
 #generates a list of words based on unused letters
-def generate_elim_guesses2(unused_letters, word_dict):
-    copy_dict = scored_words.copy()
-    filtered_dict = {}
-    letters = unused_letters[:]
+def generate_elim_guesses2(word_dict, color_code, correct_letters):
+    non_green_indeces = []
+    for i, color in enumerate(color_code):
+        if color == 'x':
+            non_green_indeces.append(i)
+    elim_letters =[]
 
-    if(len(word_dict) < 15):
-        letters = remove_letters(letters, list(word_dict.keys()))
-    
-    while not filtered_dict and len(letters) > 1:
-        for word, value in copy_dict.items():
-            if word == 'ponty':
-                print()
-            add = True
-            for letter in word:
-                if letter not in letters:
-                    add = False
-                    break
-        
-            if add:
-                filtered_dict[word] = value
-    
-        letters.pop()
+    for word in word_dict:
+        for index in non_green_indeces:
+            if word[index] not in elim_letters:
+                elim_letters.append(word[index])
 
-    return filtered_dict
+    letters_set = set(elim_letters) - set(correct_letters)
+
+    word_matches = {}
+    for word in all_words:
+        count = 0
+        used_letters = []
+        for letter in word:
+            if letter in letters_set and letter not in used_letters:
+                count += 1
+                used_letters.append(letter)
+        word_matches.setdefault(count, []).append(word)
+
+    max_count = max(word_matches.keys())
+
+    words_with_most_matches = word_matches[max_count]
+
+
+    return words_with_most_matches
 
 #removes any letters from list 'letters' that aren't in any of the words in list 'words'
 def remove_letters(letters, words):
@@ -158,7 +161,6 @@ def remove_letters(letters, words):
                 break
     
     return new_letters
-   
     
 #driver code for solving
 def solve():
@@ -196,7 +198,7 @@ def solve():
         print(f"Used letters: {[letter for letter in all_letters if letter not in used_letters]}")
         
         print("Here are some my elimination words to use: ")
-        elim_dict = generate_elim_guesses1(used_letters, correct_letters)
+        elim_dict = words_with_unused_letters(used_letters)
         #elim_dict = generate_elim_guesses2(unused_letters, word_dict)
         if elim_dict:
             print(list(elim_dict.keys())[:10])
@@ -218,10 +220,10 @@ def solve():
             if char != 'x' and guess[i] not in correct_letters:
                 correct_letters.append(guess[i])
         
+
         word_dict = filter_words(guess, color_code, word_dict)
     
     print("Congrats on solving the wordle!")
-
 
 def main():
     solve()
