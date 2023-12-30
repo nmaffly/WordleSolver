@@ -19,4 +19,66 @@ header h1 {
     margin: 5px;
 }
 
-/* Add more custom styles here */
+.container {
+    display: flex;
+    width: 100%;
+}
+
+
+.section {
+    flex: 1;
+    margin: 10px;
+    width: max-content;
+}
+
+.letter-input {
+    width: 50px;
+    height: 50px;
+    margin: 1px;
+    font-size: 30px;
+    text-align: center;
+    text-transform: uppercase;
+    caret-color: transparent;
+}
+
+.grey { background-color: grey; }
+.green { background-color: green; }
+.yellow { background-color: yellow; }
+
+.color-input {
+    opacity: 0;         /* Make them fully transparent */
+    width: 2px;         /* Minimal width */
+    height: 2px;        /* Minimal height */
+    border: none;       /* No border */
+    position: absolute; /* Take them out of document flow */
+    left: -9999px;      /* Position them off-screen */
+}
+
+.flash-messages {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.wordle-row{
+    display: flex;
+    margin-left: -1px;
+}
+
+.letter-box {
+    width: 56px;
+    height: 55px;
+    border: 1px solid black;
+    margin: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+    text-align: center;
+    text-transform: uppercase;
+    border-radius: 3px;
+}
+

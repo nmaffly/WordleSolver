@@ -7,33 +7,181 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </div> 
+        {% endif %}
+    {% endwith %}
     <h1>Wordle Solver</h1>
 
     <p>
         Enter your guess and the corresponding color code below. Type 'x' for grey, 'y' for yellow', and 'g' for green. For example, 'xxgyx'.
     </p>
-    <p>There are {{ remaining_words }} possible answers left.</p>
-    <p>Here are some recommended guesses: {{ possible_answers }}</p>
-    {% if elim_words %}
-        <p>Here are some elimination words: {{ elim_words }}</p>
-    {% endif %}
-    {% for guess in guess_record %}
-        <p>{{ guess }}</p>
-    {% endfor %}
+    <p> The algorithm recommends: {{ algo_guess }}</p>
+    <div class="container">
+        <div class="section" style="width: 500px">
+            {% for guess_index in range(guess_record|length) %}
+                <div class="wordle-row">
+                    {% for letter_index in range(guess_record[guess_index]|length) %}
+                        {% set letter = guess_record[guess_index][letter_index] %}
+                        {% set color = color_record[guess_index][letter_index] %}
+                        <div class="letter-box" style="background-color: {{ 'green' if color == 'g' else 'yellow' if color == 'y' else 'grey' }}">
+                            {{ letter }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <form action="/" method="post">
+                <form id="wordle-form" action="/submit_wordle" method="POST">
+                    <!-- Word Input Fields -->
+                    <input type="text" name="letter1" maxlength="1" class="letter-input" autofocus>
+                    <input type="text" name="letter2" maxlength="1" class="letter-input">
+                    <input type="text" name="letter3" maxlength="1" class="letter-input">
+                    <input type="text" name="letter4" maxlength="1" class="letter-input">
+                    <input type="text" name="letter5" maxlength="1" class="letter-input">
+                
+                    <!-- Color Code Input Fields -->
+                    <input type="text" name="color1" maxlength="1" class="color-input" pattern="[xgyXGY]" title="Color code must be 'x', 'g', or 'y'">
+                    <input type="text" name="color2" maxlength="1" class="color-input" pattern="[xgyXGY]" title="Color code must be 'x', 'g', or 'y'">
+                    <input type="text" name="color3" maxlength="1" class="color-input" pattern="[xgyXGY]" title="Color code must be 'x', 'g', or 'y'">
+                    <input type="text" name="color4" maxlength="1" class="color-input" pattern="[xgyXGY]" title="Color code must be 'x', 'g', or 'y'">
+                    <input type="text" name="color5" maxlength="1" class="color-input" pattern="[xgyXGY]" title="Color code must be 'x', 'g', or 'y'">
+                
+                    <!-- Hidden Submit Button -->
+                    <button type="submit" style="display: none;"></button>
+                </form>
+                <script>
+                    const letterInputs = document.querySelectorAll('.letter-input');
+                    const colorInputs = document.querySelectorAll('.color-input');
+                    let wordSubmitted = false;
+                    
+                    function focusNextInput(currentIndex, inputArray) {
+                        const nextInput = inputArray[currentIndex + 1];
+                        if (nextInput) {
+                            nextInput.focus();
+                        }
+                    }
 
-    <form action="/" method="post">
-        <label for="guess">Your Guess:</label>
-        <input type="text" id="guess" name="word" maxlength="5" pattern="[A-Za-z]{5}" title="Enter your guess" required>
-        <br>
+                    function allLetterInputsFilled() {
+                        return Array.from(letterInputs).every(input => input.value !== '');
+                    }
+                
+                    letterInputs.forEach((input, index) => {
+                        input.addEventListener('input', () => {
+                            if (input.value && index !=4){
+                                focusNextInput(index, letterInputs);
+                            }
+                            else{
+                                colorInputs[0].focus()
+                            }
+                        });
+                
+                        input.addEventListener('keydown', (event) => {
+                            if (event.key === 'Backspace') {
+                                if (input.value === '') {
+                                    const previousInput = letterInputs[index - 1];
+                                    if (previousInput) {
+                                        previousInput.value = '';
+                                        previousInput.focus();
+                                    }
+                                } else {
+                                    input.value = '';
+                                }
+                                event.preventDefault();
+                            }
+                        });
+                    });
+                
+                    colorInputs.forEach((input, index) => {
+                        input.addEventListener('input', (event) => {
+                            const value = event.target.value.toLowerCase();
+                            const letterBox = letterInputs[index];
+                            
+                            letterBox.classList.remove('grey', 'green', 'yellow');
+                            if (value === 'x') {
+                                letterBox.classList.add('grey');
+                            } else if (value === 'g') {
+                                letterBox.classList.add('green');
+                            } else if (value === 'y') {
+                                letterBox.classList.add('yellow');
+                            }
 
-        <label for="color_code">Color Code:</label>
-        <input type="text" id="color_code" name="colors" maxlength="5" pattern="[XGYxgy]{5}" title="Color Code" required>
-        <br>
-        <button type="submit">Generate words</button>
-    </form>
-    <br>
-    <form action="/reset" method="post">
-        <button type="submit">Reset</button>
-    </form>
+                            if (input.value) {
+                                focusNextInput(index, colorInputs);
+                            }
+                        });
+                
+                        input.addEventListener('keydown', (event) => {
+                            if (event.key === 'Backspace') {
+                                const letterBox = letterInputs[index];
+                                if (input.value === '' && index != 0) {
+                                    // Remove color from the previous box and move to it
+                                    const previousInput = colorInputs[index - 1];
+                                    const previousLetterBox = letterInputs[index - 1];
+                                    if (previousInput) {
+                                        previousInput.value = '';
+                                        previousInput.focus();
+                                        if (previousLetterBox) {
+                                            previousLetterBox.classList.remove('grey', 'green', 'yellow');
+                                        }
+                                    }
+                                } else if (input.value === '' && index == 0) {
+                                    letterInputs[4].focus();
+                                } else {
+                                    // Remove color from the current box
+                                    input.value = '';
+                                    letterBox.classList.remove('grey', 'green', 'yellow');
+                                }
+                                event.preventDefault();
+                            }
+                        });
+                    });
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.getElementById('wordle-form').addEventListener('submit', function(event) {
+                            const letterInputs = document.querySelectorAll('.letter-input');
+                            const colorInputs = document.querySelectorAll('.color-input');
+
+                            const allLettersFilled = Array.from(letterInputs).every(input => input.value !== '');
+                            const allColorsFilled = Array.from(colorInputs).every(input => ['x', 'y', 'g'].includes(input.value.toLowerCase()));
+
+                            console.log("All Letters Filled:", allLettersFilled);
+                            console.log("All Colors Filled:", allColorsFilled);
+
+                            if (!allLettersFilled || !allColorsFilled) {
+                                alert("Please fill out all letters and color codes.");
+                                event.preventDefault(); // Prevent form submission
+                            }
+                        });
+                    });
+
+                </script>        
+            </form>
+            <br>
+            <form action="/reset" method="post">
+                <button type="submit">Reset</button>
+            </form>
+        </div>
+        <div class="section">
+            <p>There are {{ remaining_words }} possible answers left.</p>
+            <h4>Here are some recommended guesses: </h4>
+            {% for word in possible_answers %}
+                {{ word }}
+                <br>
+            {% endfor %}
+        </div>
+        <div class="section">
+            <h4>Here are some elimination guesses: </h4>
+            {% for word in elim_words %}
+                {{ word }}
+                <br>
+            {% endfor %}
+
+        </div>
+        
+    </div>
 </body>
 </html>
