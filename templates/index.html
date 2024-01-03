@@ -3,33 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordle Solver</title>
+    <title>WordleSmith</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </div> 
-        {% endif %}
-    {% endwith %}
-    <h1>Wordle Solver</h1>
+    <div class="title-content">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </div> 
+            {% endif %}
+        {% endwith %}
 
-    <p>
-        Enter your guess and the corresponding color code below. Type 'x' for grey, 'y' for yellow', and 'g' for green. For example, 'xxgyx'.
-    </p>
-    <p> The algorithm recommends: {{ algo_guess }}</p>
+        <h1>
+            <span class="title-part-1">Wordle</span><span class="title-part-2">Smith</span>
+        </h1>
+
+        <p>
+            Enter your guess and the corresponding color code below. Type 'x' for grey, 'y' for yellow', and 'g' for green. For example, 'xxgyx'.
+        </p>
+
+        <p>There are {{ remaining_words }} possible answers left.</p>
+
+    </div>
     <div class="container">
-        <div class="section" style="width: 500px">
+        <div class="input-section">
+            <p class="recommendation">The algorithm recommends: <strong>{{ algo_guess }}</strong></p>
             {% for guess_index in range(guess_record|length) %}
                 <div class="wordle-row">
                     {% for letter_index in range(guess_record[guess_index]|length) %}
                         {% set letter = guess_record[guess_index][letter_index] %}
                         {% set color = color_record[guess_index][letter_index] %}
-                        <div class="letter-box" style="background-color: {{ 'green' if color == 'g' else 'yellow' if color == 'y' else 'grey' }}">
+                        <div class="letter-box" style="background-color: {{ '#499167' if color == 'g' else '#C9BF65' if color == 'y' else 'grey' }}">
                             {{ letter }}
                         </div>
                     {% endfor %}
@@ -108,11 +116,14 @@
                                 letterBox.classList.add('green');
                             } else if (value === 'y') {
                                 letterBox.classList.add('yellow');
+                            } else {
+                                // If the value is invalid, clear the input and maintain focus
+                                input.value = '';
+                                input.focus();
+                                return; // Exit the function
                             }
 
-                            if (input.value) {
-                                focusNextInput(index, colorInputs);
-                            }
+                            focusNextInput(index, colorInputs);
                         });
                 
                         input.addEventListener('keydown', (event) => {
@@ -166,22 +177,56 @@
             </form>
         </div>
         <div class="section">
-            <p>There are {{ remaining_words }} possible answers left.</p>
-            <h4>Here are some recommended guesses: </h4>
+            <h4>Here are some possible answers:</h4>
             {% for word in possible_answers %}
-                {{ word }}
-                <br>
+                    <li>{{ word }}</li>
             {% endfor %}
+        </div>
+        <div class="section">
+            <h4>Here are some words with unused letters: </h4>
+            {% for word in unused_letter_words %}
+                <li>{{ word }}</li>
+            {% endfor %}
+
         </div>
         <div class="section">
             <h4>Here are some elimination guesses: </h4>
             {% for word in elim_words %}
-                {{ word }}
-                <br>
+                <li>{{ word }}</li>
             {% endfor %}
 
         </div>
-        
     </div>
+
+    <div class="about-section">
+        <div class="about-content">
+            <h2>About This Website</h2>
+            <p>
+                This website was created as a tool to help Wordle enthusiasts find possible solutions to their daily puzzles. 
+                Developed with a passion for word games and web development, it represents the intersection of my hobbies and technical skills.
+            </p>
+            <p>
+                To investigate the importance of the letters and their positions in a guess, I created the solving algorithm
+                based off of a scoring system. Each word is given a score based its letters<code>&#8212;</code>each letter is scored
+                on its frequency in any position and its frequency in that particular position. 
+            </p>
+            <p>
+                I also incorporated common wordle strategies to improve the performance of the algorithm. For example, using
+                different types of elimination guesses at certain points helps narrow down the answer pool. Wordle answers 
+                are also all fairly common words, and are usually not plural or past tense. 
+            </p>
+            <p>
+                Ultimately, after lots of testing (using the New York Times official answer list), evaluating, and optimizing,
+                the algorithm was able to solve <strong>99% of wordles in 6 guesses or less, with an average guess count of 3.8</strong>. To see
+                a peek behind the curtain, the code is all <a href="https://github.com/nmaffly/WordleSolver">opensource</a>.  
+            </p>
+            <h2>About Me</h2>
+            <p>I'm Nathaniel, a computer science undergraduate at UC Davis with a love for coding and all things puzzle-related. </p>
+            <p>Feel free to <a href="mailto:ncmaffly@ucdavis.edu">contact me</a> or checkout my <a href="https://www.linkedin.com/in/nathaniel-maffly-390235268/">linkedIn</a>.</p>
+        </div>
+    </div>
+
+    
+    
 </body>
 </html>

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, flash
-from solve import filter_words, words_with_unused_letters, generate_elim_guesses2, scored_words
+from solve import filter_words, words_with_unused_letters, generate_elim_guesses2, scored_words, count_common_words
 from score import all_words
 
 app = Flask(__name__)
@@ -17,6 +17,8 @@ def index():
         session['used_letters'] = []
     if 'correct_letters' not in session:
         session['correct_letters'] = []
+    if 'unused_letter_words' not in session:
+        session['unused_letter_words'] = list(scored_words)[:10]
     if 'elim_words' not in session:
         session['elim_words'] = []
     if 'guess_count' not in session:
@@ -24,7 +26,7 @@ def index():
 
     previous_guesses = list(zip(session['guess_record'], session['color_record']))
 
-    elim_dict = {}
+    unused_words = {}
 
     # Reconstruct word_dict from scratch on every request
     word_dict = scored_words.copy()
@@ -81,23 +83,34 @@ def index():
             return redirect('/')
 
         # Apply the filter with the latest guess and color code
-        elim_dict = words_with_unused_letters(session['used_letters'])
+        unused_words = words_with_unused_letters(session['used_letters'])
+        session["unused_letter_words"] = list(unused_words.keys())[:10]
 
-        if len(word_dict) > 350:
-            session['algo_guess'] = list(elim_dict)[0]
-        elif len(word_dict) > 2 and color_code.count('g') >= 4 and session['guess_count'] < 5:
-            session['algo_guess'] = (generate_elim_guesses2(word_dict, color_code, session['correct_letters']))[0]
+        if session['guess_count'] < 2:
+            if len(word_dict) < 15:
+                session['algo_guess'] = list(word_dict)[0]
+            elif len(word_dict) < 45:
+                common_words_left = count_common_words(list(word_dict))
+                session['elim_words'] = generate_elim_guesses2(common_words_left, color_code, session['correct_letters'])[:10]
+                session['algo_guess'] = session['elim_words'][0]
+            else:
+                session['algo_guess'] = list(unused_words)[0]
+        elif color_code.count('g') >= 3 and session['guess_count'] < 5:
+            common_words_left = count_common_words(list(word_dict))
+            if len(common_words_left) > 3:
+                session['elim_words'] = (generate_elim_guesses2(word_dict, color_code, session['correct_letters']))[:10]
+                session['algo_guess'] = session['elim_words'][0]
+            else:
+                session['algo_guess'] = list(word_dict)[0]
         else:
             if word_dict:
                 session['algo_guess'] = list(word_dict)[0]
             
 
-        session["elim_words"] = list(elim_dict.keys())[:10]
-
         return redirect('/')
 
     else:
-        return render_template('index.html', guess_count=session['guess_count'], possible_answers=possible_answers, elim_words=session['elim_words'], guess_record=session['guess_record'], color_record=session["color_record"], previous_guesses=previous_guesses, remaining_words=len(word_dict), algo_guess=session['algo_guess'])
+        return render_template('index.html', guess_count=session['guess_count'], possible_answers=possible_answers, unused_letter_words=session['unused_letter_words'] ,elim_words=session['elim_words'], guess_record=session['guess_record'], color_record=session["color_record"], previous_guesses=previous_guesses, remaining_words=len(word_dict), algo_guess=session['algo_guess'])
 
 
 @app.route('/reset', methods=['POST'])
