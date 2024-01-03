@@ -30,7 +30,7 @@ def test_algorithm(positional_weight, overall_weight, elim_threshold):
 
     avg_num_guesses = total_guesses / (len(answers))
 
-    print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
+    #print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
 
     return avg_num_guesses, unsolved
 
@@ -64,6 +64,7 @@ def run_wordle(answer, scored_words, elim_threshold):
     current_guess = list(word_dict)[0]
 
     while(color_code != 'ggggg'):
+        #print(current_guess)
         color_code = compare_answer(current_guess, answer)
 
         num_guesses += 1
@@ -73,13 +74,19 @@ def run_wordle(answer, scored_words, elim_threshold):
         for i, char in enumerate(color_code):
                 if char != 'x' and current_guess[i] not in correct_letters:
                     correct_letters.append(current_guess[i])
-
-        if num_guesses < 2 or len(word_dict) > elim_threshold: 
-            for char in current_guess:
-                if char not in used_letters:
-                    used_letters.append(char)
-            elim_dict = words_with_unused_letters(used_letters)
-            current_guess = list(elim_dict)[0]
+            
+        if num_guesses < 2: 
+            common_words_left = count_common_words(list(word_dict))
+            if len(word_dict) < 15 or len(common_words_left) < 3:
+                current_guess = list(word_dict)[0]
+            elif len(word_dict) < 45:
+                current_guess = (generate_elim_guesses2(common_words_left, color_code, correct_letters))[0]
+            else:
+                for char in current_guess:
+                    if char not in used_letters:
+                        used_letters.append(char)
+                elim_dict = words_with_unused_letters(used_letters)
+                current_guess = list(elim_dict)[0]
         elif color_code.count('g') >= 3 and num_guesses < 5:
             common_words_left = count_common_words(list(word_dict))
             if len(common_words_left) > 3:
@@ -129,7 +136,7 @@ def optimize_elim_threshold(positional_weight, overall_weight):
 def optimize_weights(elim_threshold):
     scoring_weight_evaluation = [] #to be list of dictionaries that will be converted to data frame
 
-    for number in np.arange(0, 2.1, 0.1):
+    for number in np.arange(0, 2.1, 0.05):
         current_row = {}
         positional_weight = round(number, 1)
         overall_weight = 1
@@ -166,24 +173,20 @@ def evaluate_algorithm():
 def main():
     
     #Test cases for compare_answer()
-    print(compare_answer('mired', 'wider'))
+    #print(compare_answer('mired', 'wider'))
     #print(compare_answer('linty', 'bagel'))
     #print(compare_answer('paled', 'bagel'))
     #print(compare_answer('elect', 'elect'))
-    
-
-    '''
-    evaluation_df = evaluate_algorithm()
 
     pd.set_option('display.max_rows', None)
-    print(evaluation_df)
 
-    max_index = evaluation_df['avg_guesses'].idxmax()
-    max_row = evaluation_df.loc[max_index]
-    print("\nAlgorithm with highest average guesses:")
-    print(max_row)
-    evaluation_df.to_csv('algorithms.csv', index=False)
-    '''
+    df = optimize_weights(elim_threshold=350)
+
+    min_index = df['avg_guesses'].idxmin()
+    min_row = df.loc[min_index]
+    print("\nAlgorithm with lowest average guesses:")
+    print(min_row)
+    print(df)
 
 
     scored_words = {}
@@ -192,7 +195,7 @@ def main():
 
     scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
 
-    #run_wordle('baker', scored_words, elim_threshold=350)
+    run_wordle('piano', scored_words, elim_threshold=350)
 
     unsolved_words = {}
 

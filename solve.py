@@ -54,8 +54,8 @@ def filter_words(guess, color_code, word_dict):
 
     if len(word_dict) < 36:
         word_dict = narrow_common_sort(word_dict)
-    elif len(word_dict) < 215:
-        word_dict = broad_common_sort(word_dict)
+    #if len(word_dict) < 350:
+    word_dict = broad_common_sort(word_dict)
 
     return word_dict
 
@@ -66,8 +66,10 @@ def broad_common_sort(word_dict):
     :param word_dict: Dictionary of words (keys) and their associated values.
     :param common_words: List of common words to prioritize.
     :return: Sorted dictionary (word, value)
-    """
-    sorted_items = sorted(word_dict.items(), key=lambda item: (item[0] not in common_words, item[0].endswith('s')))
+    """ 
+
+    sorted_items = sorted(word_dict.items(), key=lambda item: (item[0] not in common_words, item[0].endswith('s'), item[0].endswith('ed')))
+
     return dict(sorted_items)
 
 def narrow_common_sort(word_dict):
@@ -227,6 +229,5 @@ def solve():
 
 def main():
     solve()
-
 if __name__ == "__main__":
     main()

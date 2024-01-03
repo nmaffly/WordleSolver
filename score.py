@@ -41,7 +41,7 @@ answers = read_file('words/official_answers.txt')
 scored_words = {}
 
 for word in all_words:
-    scored_words[word] = calc_score(word, 0.2, 1)
+    scored_words[word] = calc_score(word, 0.5, 1)
     
 scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
 
@@ -49,7 +49,7 @@ scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], rever
 def main():
 
     test_word = 'hello'
-    score = calc_score(test_word)
+    score = calc_score(test_word, 0.5, 1)
     print(f"The score for {test_word} is {score}")
     
     i = 0
