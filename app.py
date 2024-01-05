@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, flash
-from solve import filter_words, words_with_unused_letters, generate_elim_guesses2, scored_words, count_common_words
-from score import all_words
+from utils.solve import filter_words, words_with_unused_letters, generate_elim_guesses2, scored_words, count_common_words
+from utils.score import all_words
 
 app = Flask(__name__)
 app.secret_key = 'xib2089fvbh28dv'

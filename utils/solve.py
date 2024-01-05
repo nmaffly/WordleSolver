@@ -1,4 +1,4 @@
-from score import scored_words, common_words, all_words, overall_frequencies
+from utils.score import scored_words, common_words, all_words, overall_frequencies
 
 #alphabet as a global variable
 all_letters = [chr(ord('a') + i) for i in range(26)] 
@@ -54,6 +54,7 @@ def filter_words(guess, color_code, word_dict):
 
     if len(word_dict) < 36:
         word_dict = narrow_common_sort(word_dict)
+        pass
     #if len(word_dict) < 350:
     word_dict = broad_common_sort(word_dict)
 

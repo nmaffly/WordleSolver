@@ -1,5 +1,5 @@
-from score import common_words, all_words, calc_score, answers
-from solve import filter_words, generate_elim_guesses2, words_with_unused_letters, count_common_words
+from utils.score import common_words, all_words, calc_score, answers
+from utils.solve import filter_words, generate_elim_guesses2, words_with_unused_letters, count_common_words
 import numpy as np
 import pandas as pd
 
@@ -30,7 +30,7 @@ def test_algorithm(positional_weight, overall_weight, elim_threshold):
 
     avg_num_guesses = total_guesses / (len(answers))
 
-    #print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
+    print_stats(avg_num_guesses, positional_weight, overall_weight, unsolved, elim_threshold)
 
     return avg_num_guesses, unsolved
 
@@ -180,13 +180,13 @@ def main():
 
     pd.set_option('display.max_rows', None)
 
-    df = optimize_weights(elim_threshold=350)
+    #df = optimize_weights(elim_threshold=350)
 
-    min_index = df['avg_guesses'].idxmin()
+    '''min_index = df['avg_guesses'].idxmin()
     min_row = df.loc[min_index]
     print("\nAlgorithm with lowest average guesses:")
     print(min_row)
-    print(df)
+    print(df)'''
 
 
     scored_words = {}
@@ -195,11 +195,11 @@ def main():
 
     scored_words = dict(sorted(scored_words.items(), key=lambda item: item[1], reverse=True))
 
-    run_wordle('piano', scored_words, elim_threshold=350)
+    #run_wordle('piano', scored_words, elim_threshold=350)
 
     unsolved_words = {}
 
-    #avg_guesses, unsolved_words = test_algorithm(0.2, 1, 350)
+    avg_guesses, unsolved_words = test_algorithm(0.5, 1, 350)
 
     for word, num_guesses in unsolved_words.items():
         #print(f"{word}: {num_guesses}")
