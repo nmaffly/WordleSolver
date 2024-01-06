@@ -1,4 +1,4 @@
-from utils.score import scored_words, common_words, all_words, overall_frequencies
+from .score import scored_words, common_words, all_words, overall_frequencies
 
 #alphabet as a global variable
 all_letters = [chr(ord('a') + i) for i in range(26)] 

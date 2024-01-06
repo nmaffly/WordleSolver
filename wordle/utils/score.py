@@ -1,5 +1,5 @@
 import json
-from utils.stats import read_file
+from .stats import read_file
 
 positional_frequencies_file = 'positional_frequencies.json'
 overall_frequencies_file = 'overall_frequencies.json'
