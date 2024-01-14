@@ -191,3 +191,9 @@ button:hover {
 .about-section a:hover {
     color: #003366; /* Darker color on hover for links */
 }
+
+.input-message {
+    color: #333;
+    font-size: 16px;
+    margin-top: 10px;
+}
