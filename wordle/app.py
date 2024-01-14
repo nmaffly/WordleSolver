@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, session, flash
 from .utils.solve import filter_words, words_with_unused_letters, generate_elim_guesses2, scored_words, count_common_words
 from .utils.score import all_words
@@ -51,7 +52,6 @@ def index():
         try:
             input_colors = [request.form.get(f'color{i}', '') for i in range(1,6)]
             color_code = ''.join(input_colors)
-            print(list(color_code))
             if set(color_code) - {'x', 'g', 'y'}:
                 flash("Please input a valid color code")
                 return redirect('/')
@@ -120,4 +120,5 @@ def reset():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
